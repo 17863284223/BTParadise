@@ -70,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     FloatingActionButton mFab;
     private SupportAnimator mAnimator;
 
+    private int mPagePos = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,10 +92,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initListeners() {
         mFab.setOnClickListener(this);
         view_hide.setOnClickListener(this);
+        mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                if(position==2){
+                    mFab.setImageResource(R.mipmap.ic_cate);
+                }else{
+                    mFab.setImageResource(R.mipmap.ic_search);
+                }
+                mPagePos = position;
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
     }
 
     private void initPageViews(){
-        mTitles = Arrays.asList("火热下载","新片推荐");
+        mTitles = Arrays.asList("火热下载","新片推荐","电影检索");
         mViews = new ArrayList<>();
         View v_hot = View.inflate(this,R.layout.v_hot_video,null);
         initHotVideoView(v_hot);
@@ -101,6 +124,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View v_new = View.inflate(this,R.layout.v_hot_video,null);
         initNewVideoView(v_new);
         mViews.add(v_new);
+        View v_search = new TextView(this);
+        mViews.add(v_search);
     }
 
     private void initNewVideoView(View v){
@@ -199,9 +224,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
-    private void searchMovie() {
+    private void searchMovie(){
         String str = edit_text_search.getText().toString();
         if(str.length()>0){
+            edit_text_search.setText("");
             Toast.makeText(this, str,Toast.LENGTH_SHORT).show();
         }
     }
@@ -267,7 +293,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if(v.getId()==R.id.fab){
-            clickOnFab();
+            if(mPagePos!=2)
+                clickOnFab();
         }else if(v.getId()==R.id.view_hide){
             if(mAnimator!=null&&!mAnimator.isRunning())
                 clickOnViewHide();
