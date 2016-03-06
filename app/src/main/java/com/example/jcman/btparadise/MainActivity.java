@@ -2,6 +2,7 @@ package com.example.jcman.btparadise;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -26,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.app.tool.logger.Logger;
+import com.example.jcman.btparadise.activity.VideoDetailActivity;
 import com.example.jcman.btparadise.adapter.CommonAdapter;
 import com.example.jcman.btparadise.adapter.MyAnimatorListenerAdapter;
 import com.example.jcman.btparadise.adapter.MyViewPagerAdapter;
@@ -34,6 +37,8 @@ import com.example.jcman.btparadise.model.Video;
 import com.example.jcman.btparadise.util.ScreenUtil;
 import com.example.jcman.btparadise.util.StringUtil;
 import com.example.jcman.btparadise.util.VersionUtil;
+import com.example.jcman.btparadise.view.PTRListView;
+import com.example.jcman.btparadise.view.PullToRefreshLayout;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
 import com.nineoldandroids.animation.ObjectAnimator;
 
@@ -42,6 +47,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,8 +75,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private List<String> mTitles;
     FloatingActionButton mFab;
     private SupportAnimator mAnimator;
+    private MyListViewAdapter mPTRAdapter;
+    private List<Video> mPTRVideoList;
+    PullToRefreshLayout refreshLayout;
 
     private int mPagePos = 0;
+    private int mMaxPage = 1;
+    private int mCurrentVideoPage = 1;
 
 
     @Override
@@ -87,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mTabLayout.setTabsFromPagerAdapter(mAdapter);
         mTabLayout.setupWithViewPager(mViewPager);
         handFabPathAndSearch();
+        mMaxPage = getMaxPage(mDoc);
     }
 
     private void initListeners() {
@@ -124,19 +136,120 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View v_new = View.inflate(this,R.layout.v_hot_video,null);
         initNewVideoView(v_new);
         mViews.add(v_new);
-        View v_search = new TextView(this);
+        View v_search = View.inflate(this,R.layout.v_main_video,null);
+        initMainVideoView(v_search);
         mViews.add(v_search);
     }
 
+    private void initMainVideoView(View v_search){
+
+        PTRListView ptrListView = (PTRListView) v_search.findViewById(R.id.ptr_listview_ac_main);
+        refreshLayout = (PullToRefreshLayout) v_search.findViewById(R.id.ptrLayout_ac_main);
+        mPTRVideoList = Video.getMainVideoList(mDoc);
+        mPTRAdapter = new MyListViewAdapter(this,mPTRVideoList,R.layout.item_hot_video);
+        ptrListView.setAdapter(mPTRAdapter);
+        ptrListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this,VideoDetailActivity.class);
+                intent.putExtra("video",mPTRVideoList.get(position));
+                startActivity(intent);
+            }
+        });
+        refreshLayout.setOnRefreshListener(new PullToRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+
+            }
+
+            @Override
+            public void onLoadMore() {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if(mCurrentVideoPage+1<=mMaxPage){
+                                mCurrentVideoPage++;
+                                Document doc = Jsoup.connect(getNextPageUrl()).get();
+                                List<Video> _List = Video.getMainVideoList(doc);
+                                for(Video video:_List)
+                                    mPTRVideoList.add(video);
+                                notifyDataChanged();
+                            }else{
+                                loadFail();
+                                showMessage("没有更多了");
+                            }
+                        } catch (IOException e) {
+                            mCurrentVideoPage--;
+                            loadFail();
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
+    }
+
+    private void loadFail(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run(){
+                refreshLayout.loadmoreFinish(PullToRefreshLayout.FAIL);
+            }
+        });
+    }
+
+    private void notifyDataChanged(){
+        runOnUiThread(new Runnable(){
+            @Override
+            public void run(){
+                refreshLayout.loadmoreFinish(PullToRefreshLayout.SUCCEED);
+                mPTRAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    private void showMessage(final String msg){
+        runOnUiThread(new Runnable(){
+            @Override
+            public void run(){
+                Toast.makeText(MainActivity.this,msg,Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private String getNextPageUrl(){
+        String url = StringUtil.WEB_MAIN_PAGE_URL+"/?PageNo=";
+        url+=mCurrentVideoPage;
+        return url;
+    }
+
     private void initNewVideoView(View v){
+        final List<Video> list = Video.getNewVideoList(mDoc);
         ListView listView = (ListView) v.findViewById(R.id.listview_hot_video);
-        listView.setAdapter(new MyHotAdapter(this,Video.getNewVideoList(mDoc),R.layout.item_hot_video));
+        listView.setAdapter(new MyListViewAdapter(this,list,R.layout.item_hot_video));
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this, VideoDetailActivity.class);
+                intent.putExtra("video",list.get(position));
+                startActivity(intent);
+            }
+        });
     }
 
     private void initHotVideoView(View v) {
         ListView listView = (ListView) v.findViewById(R.id.listview_hot_video);
         mVideos = getHotVideoList();
-        listView.setAdapter(new MyHotAdapter(this,mVideos,R.layout.item_hot_video));
+        listView.setAdapter(new MyListViewAdapter(this,mVideos,R.layout.item_hot_video));
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this, VideoDetailActivity.class);
+                intent.putExtra("video",mVideos.get(position));
+                startActivity(intent);
+            }
+        });
     }
 
     private void initView(){
@@ -217,7 +330,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     });
                 }
                 mAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-//                mAnimator.setInterpolator(new AccelerateInterpolator());
                 mAnimator.setDuration(600);
                 mAnimator.start();
             }
@@ -322,9 +434,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }, 600);
     }
 
-    private class MyHotAdapter extends CommonAdapter<Video>{
+    private int getMaxPage(Document doc){
+        Element e = doc.getElementsByAttributeValue("class","pagelist").
+                first().getElementsByAttributeValue("class","pageinfo").first().getElementsByTag("strong").first();
+        String num = e.text();
+        return Integer.parseInt(num);
+    }
 
-        public MyHotAdapter(Context context, List<Video> list, int layoutId){
+    private class MyListViewAdapter extends CommonAdapter<Video>{
+
+        public MyListViewAdapter(Context context, List<Video> list, int layoutId){
             super(context, list, layoutId);
         }
 

@@ -5,5 +5,5 @@ package com.example.jcman.btparadise.util;
  */
 public class StringUtil {
 
-    public static final String WEB_MAIN_PAGE_URL = "http://www.bttiantang.com";
+    public static final String WEB_MAIN_PAGE_URL = "http://www.bttiantang.cc";
 }

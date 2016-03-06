@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <RelativeLayout
+        android:background="@color/colorPrimary"
+        android:layout_width="match_parent"
+        android:layout_height="180dp">
+        <ImageView
+            android:layout_margin="20dp"
+            android:id="@+id/iv_ac_videodetail"
+            android:layout_width="100dp"
+            android:layout_height="139dp" />
+        <RelativeLayout
+            android:layout_toRightOf="@id/iv_ac_videodetail"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:layout_centerVertical="true"
+                android:orientation="vertical"
+                android:layout_marginTop="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:singleLine="true"
+                    android:id="@+id/tv_ac_videodetail_label"
+                    android:text="标签："
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    />
+                <TextView
+                    android:singleLine="true"
+
+                    android:id="@+id/tv_ac_videodetail_locality"
+                    android:text="地区："
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    />
+                <TextView
+                    android:singleLine="true"
+
+                    android:id="@+id/tv_ac_videodetail_time"
+                    android:text="年份："
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    />
+                <TextView
+                    android:singleLine="true"
+
+                    android:id="@+id/tv_ac_videodetail_daoyan"
+
+                    android:text="导演："
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    />
+                <TextView
+                    android:singleLine="true"
+                    android:id="@+id/tv_ac_videodetail_actor"
+                    android:text="主演："
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    />
+            </LinearLayout>
+        </RelativeLayout>
+    </RelativeLayout>
+    <TextView
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:textColor="#333"
+        android:textSize="18sp"
+        android:text="下载地址"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        />
+    <View
+        android:layout_marginTop="10dp"
+        android:background="#999"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        />
+    <ListView
+        android:id="@+id/listview__ac_videodetail_downlist"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </ListView>
+</LinearLayout>
