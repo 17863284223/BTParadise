@@ -6,6 +6,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -34,6 +36,7 @@ public class VideoDetailActivity extends AppCompatActivity{
     private ImageView mCoverView;
     private Video mVideo;
     private ProgressDialog mLoadingDialog;
+    private String mDouBanDetailurl;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -48,6 +51,25 @@ public class VideoDetailActivity extends AppCompatActivity{
         setTitle(mVideo.getTitle());
 
     }
+
+    /*@Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        getMenuInflater().inflate(R.menu.menu_cate,menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        if(item.getItemId()==R.id.action_cate_detail){
+            if(mDouBanDetailurl!=null&&mDouBanDetailurl.length()>1){
+                Intent intent= new Intent();
+                intent.setAction("android.intent.action.VIEW");
+                Uri content_url = Uri.parse(mDouBanDetailurl);
+                intent.setData(content_url);
+                startActivity(intent);
+            }
+        }
+        return super.onOptionsItemSelected(item);
+    }*/
 
     private void initListView(Document doc){
         final List<Video> list = Video.getVideoDownList(doc);
@@ -78,12 +100,12 @@ public class VideoDetailActivity extends AppCompatActivity{
     }
 
     private void getDataFromNet(){
-        new Thread(new Runnable() {
+        new Thread(new Runnable(){
             @Override
             public void run() {
                 try {
-                    Logger.e(mVideo.getLink());
                     Document doc = Jsoup.connect(mVideo.getLink()).get();
+                    mDouBanDetailurl = Video.getDouBanDetailUrl(doc);
                     mVideo = Video.getVideoInfo(doc);
                     updateView(doc);
                     cancelDialog();

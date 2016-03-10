@@ -259,7 +259,6 @@ public class Video implements Serializable{
             String title = e.getElementsByAttributeValue("class","tt cl").first().getElementsByTag("b").first().text();
             String link = e.getElementsByAttributeValue("class","tt cl").first().getElementsByTag("a").first().attr("href");
             link = StringUtil.WEB_MAIN_PAGE_URL+link;
-            Logger.e(link);
             String mark = e.getElementsByAttributeValue("class","rt").first().text().replace("豆瓣评分：","");
             String coverUrl = e.getElementsByAttributeValue("class","litpic").first().getElementsByTag("img").first().attr("src");
             Video video = new Video();
@@ -270,5 +269,33 @@ public class Video implements Serializable{
             _List.add(video);
         }
         return _List;
+    }
+
+    public static List<Video> getCateVideoList(Document doc){
+        List<Video> _List = new ArrayList<>();
+        Elements es = doc.getElementsByAttributeValue("class","perone");
+        for(Element e :es){
+            String title = e.getElementsByAttributeValue("class","minfo").first().getElementsByTag("h2").first().text();
+            String coverUrl = e.getElementsByAttributeValue("class","litpic").first().getElementsByTag("img").first().attr("src");
+            String link = e.getElementsByAttributeValue("class","litpic").first().getElementsByTag("a").first().attr("href");
+            link = StringUtil.WEB_MAIN_PAGE_URL+link;
+            String mark = e.getElementsByAttributeValue("class","litpic").first().getElementsByAttributeValue("class","sum").first().text();
+            Video video = new Video();
+            video.setCoverUrl(coverUrl);
+            video.setTitle(title);
+            video.setLink(link);
+            video.setMark(mark);
+            _List.add(video);
+        }
+        return _List;
+    }
+
+    public static String getDouBanDetailUrl(Document doc){
+        String url  = "";
+        Elements es = doc.getElementsByAttributeValue("class","moviedteail_list");
+        Element e = es.get(es.size()-1);
+        url = e.getElementsByTag("a").first().attr("href");
+        url = StringUtil.WEB_MAIN_PAGE_URL+url;
+        return url;
     }
 }

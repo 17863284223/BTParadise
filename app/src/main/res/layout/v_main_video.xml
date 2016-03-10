@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+    <RelativeLayout
+        android:visibility="visible"
+        android:id="@+id/catelogView"
+        android:layout_width="match_parent"
+        android:background="#00ffff"
+        android:layout_height="200dp">
+    </RelativeLayout>
     <com.example.jcman.btparadise.view.PullToRefreshLayout
+        android:background="#fff"
         android:id="@+id/ptrLayout_ac_main"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -14,4 +22,4 @@
             android:layout_height="match_parent"/>
         <include layout="@layout/load_more" />
     </com.example.jcman.btparadise.view.PullToRefreshLayout>
-</LinearLayout>
+</RelativeLayout>

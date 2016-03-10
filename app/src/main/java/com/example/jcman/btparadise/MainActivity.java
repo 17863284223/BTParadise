@@ -1,5 +1,7 @@
 package com.example.jcman.btparadise;
 
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -7,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
@@ -19,9 +22,13 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -35,6 +42,7 @@ import com.example.jcman.btparadise.adapter.MyAnimatorListenerAdapter;
 import com.example.jcman.btparadise.adapter.MyViewPagerAdapter;
 import com.example.jcman.btparadise.adapter.ViewHolder;
 import com.example.jcman.btparadise.model.Video;
+import com.example.jcman.btparadise.model.VideoType;
 import com.example.jcman.btparadise.util.ScreenUtil;
 import com.example.jcman.btparadise.util.StringUtil;
 import com.example.jcman.btparadise.util.VersionUtil;
@@ -78,10 +86,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private MyListViewAdapter mPTRAdapter;
     private List<Video> mPTRVideoList;
     PullToRefreshLayout refreshLayout;
+    PTRListView ptrListView;
+    private ProgressDialog mLoadingDialog;
 
     private int mPagePos = 0;
     private int mMaxPage = 1;
     private int mCurrentVideoPage = 1;
+
+    private  View v_cate;
+    private String mCateurl = "";
+    private boolean flag = false;
 
 
     @Override
@@ -92,6 +106,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initView();
         initPageViews();
         initListeners();
+        mLoadingDialog = new ProgressDialog(this);
+        mLoadingDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        mLoadingDialog.setMessage("加载中～～");
         bit_loading = BitmapFactory.decodeResource(getResources(),R.mipmap.ic_cover_loading);
         mAdapter = new MyViewPagerAdapter(this,mViews,mTitles);
         mViewPager.setAdapter(mAdapter);
@@ -142,12 +159,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initMainVideoView(View v_search){
-
-        PTRListView ptrListView = (PTRListView) v_search.findViewById(R.id.ptr_listview_ac_main);
+        v_cate = v_search.findViewById(R.id.catelogView);
+        ptrListView = (PTRListView) v_search.findViewById(R.id.ptr_listview_ac_main);
         refreshLayout = (PullToRefreshLayout) v_search.findViewById(R.id.ptrLayout_ac_main);
         mPTRVideoList = Video.getMainVideoList(mDoc);
-        mPTRAdapter = new MyListViewAdapter(this,mPTRVideoList,R.layout.item_hot_video);
-        ptrListView.setAdapter(mPTRAdapter);
+        setPtrVideoAdapter();
         ptrListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -158,20 +174,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
         refreshLayout.setOnRefreshListener(new PullToRefreshLayout.OnRefreshListener() {
             @Override
-            public void onRefresh() {
+            public void onRefresh(){
 
             }
-
             @Override
-            public void onLoadMore() {
-                new Thread(new Runnable() {
+            public void onLoadMore(){
+                new Thread(new Runnable(){
                     @Override
                     public void run() {
                         try {
                             if(mCurrentVideoPage+1<=mMaxPage){
                                 mCurrentVideoPage++;
                                 Document doc = Jsoup.connect(getNextPageUrl()).get();
-                                List<Video> _List = Video.getMainVideoList(doc);
+                                List<Video> _List = new ArrayList<Video>();
+                                if(!flag)
+                                    _List = Video.getMainVideoList(doc);
+                                else
+                                    _List = Video.getCateVideoList(doc);
                                 for(Video video:_List)
                                     mPTRVideoList.add(video);
                                 notifyDataChanged();
@@ -219,8 +238,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private String getNextPageUrl(){
-        String url = StringUtil.WEB_MAIN_PAGE_URL+"/?PageNo=";
-        url+=mCurrentVideoPage;
+        String url = "";
+        if(!flag){
+            url = StringUtil.WEB_MAIN_PAGE_URL+"/?PageNo="+mCurrentVideoPage;
+        }
+        else{
+            url = mCateurl+"/"+mCurrentVideoPage+"/";
+        }
         return url;
     }
 
@@ -386,7 +410,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu){
 //        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
@@ -405,15 +429,99 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Bitmap bit_loading;
 
     @Override
-    public void onClick(View v) {
+    public void onClick(View v){
         if(v.getId()==R.id.fab){
             if(mPagePos!=2)
                 clickOnFab();
+            else{
+                showCateDlg();
+            }
         }else if(v.getId()==R.id.view_hide){
             if(mAnimator!=null&&!mAnimator.isRunning())
                 clickOnViewHide();
         }
     }
+
+    private void showCateDlg(){
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        View v_content = View.inflate(this,R.layout.v_dlg_cate,null);
+        final GridView gridview = (GridView) v_content.findViewById(R.id.gridview_dlg_cate);
+        List<VideoType> list = VideoType.getVideoTypes();
+        MyGridAdapter adapter = new MyGridAdapter(this,list,R.layout.item_gridview);
+        gridview.setAdapter(adapter);
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                VideoType type = (VideoType) gridview.getItemAtPosition(position);
+                String link = type.getLink();
+                getCateVideos(link);
+                dialog.dismiss();
+            }
+        });
+        dialog.setContentView(v_content);
+        dialog.show();
+    }
+
+    private void getCateVideos(final String link){
+        showProDialog();
+        new Thread(new Runnable(){
+            @Override
+            public void run(){
+                try{
+                    Document doc = Jsoup.connect(link).get();
+                    if(doc!=null){
+                        mCateurl = link;
+                        mCurrentVideoPage = 1;
+                        flag = true;
+                        mPTRVideoList = Video.getCateVideoList(doc);
+                        setPtrVideoAdapter();
+                    }
+
+                } catch (IOException e){
+                    e.printStackTrace();
+                }
+                cancelProDialog();
+            }
+        }).start();
+    }
+
+    private void setPtrVideoAdapter(){
+        runOnUiThread(new Runnable(){
+            @Override
+            public void run(){
+                mPTRAdapter = new MyListViewAdapter(MainActivity.this,mPTRVideoList,R.layout.item_hot_video);
+                ptrListView.setAdapter(mPTRAdapter);
+            }
+        });
+    }
+
+    private void showProDialog(){
+        mLoadingDialog.show();
+    }
+
+    private void cancelProDialog(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mLoadingDialog.dismiss();
+            }
+        });
+    }
+
+
+    private class MyGridAdapter extends CommonAdapter<VideoType>{
+
+        public MyGridAdapter(Context context, List<VideoType> list, int layoutId) {
+            super(context, list, layoutId);
+        }
+
+        @Override
+        public void convert(ViewHolder holder, VideoType videoType){
+            holder.setText(R.id.tv_item_grid,videoType.getTypename());
+        }
+    }
+
 
     private void clickOnViewHide(){
         edit_text_search.setText("");
