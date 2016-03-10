@@ -250,4 +250,25 @@ public class Video implements Serializable{
         }
         return _List;
     }
+
+    public static List<Video> getVideoList(Document doc){
+        List<Video> _List = new ArrayList<>();
+        Elements es = doc.getElementsByAttributeValue("class","item cl");
+        for(int i=0;i<es.size()-1;i++){
+            Element e = es.get(i);
+            String title = e.getElementsByAttributeValue("class","tt cl").first().getElementsByTag("b").first().text();
+            String link = e.getElementsByAttributeValue("class","tt cl").first().getElementsByTag("a").first().attr("href");
+            link = StringUtil.WEB_MAIN_PAGE_URL+link;
+            Logger.e(link);
+            String mark = e.getElementsByAttributeValue("class","rt").first().text().replace("豆瓣评分：","");
+            String coverUrl = e.getElementsByAttributeValue("class","litpic").first().getElementsByTag("img").first().attr("src");
+            Video video = new Video();
+            video.setCoverUrl(coverUrl);
+            video.setTitle(title);
+            video.setLink(link);
+            video.setMark(mark);
+            _List.add(video);
+        }
+        return _List;
+    }
 }

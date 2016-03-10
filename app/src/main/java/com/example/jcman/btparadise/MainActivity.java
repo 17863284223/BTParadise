@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.app.tool.logger.Logger;
+import com.example.jcman.btparadise.activity.SearchActivity;
 import com.example.jcman.btparadise.activity.VideoDetailActivity;
 import com.example.jcman.btparadise.adapter.CommonAdapter;
 import com.example.jcman.btparadise.adapter.MyAnimatorListenerAdapter;
@@ -58,7 +59,6 @@ import io.codetail.arcanimator.ArcAnimator;
 import io.codetail.arcanimator.Side;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
-
 
     private Document mDoc;
     private List<Video> mVideos;
@@ -340,7 +340,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String str = edit_text_search.getText().toString();
         if(str.length()>0){
             edit_text_search.setText("");
-            Toast.makeText(this, str,Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, SearchActivity.class);
+            intent.putExtra("search",str);
+            startActivity(intent);
         }
     }
 

@@ -82,6 +82,7 @@ public class VideoDetailActivity extends AppCompatActivity{
             @Override
             public void run() {
                 try {
+                    Logger.e(mVideo.getLink());
                     Document doc = Jsoup.connect(mVideo.getLink()).get();
                     mVideo = Video.getVideoInfo(doc);
                     updateView(doc);

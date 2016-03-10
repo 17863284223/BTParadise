@@ -25,5 +25,9 @@
         </activity>
         <activity android:name=".activity.VideoDetailActivity"/>
         <activity android:name=".activity.DownloadActivity"/>
+        <activity
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:theme="@style/NoActionBarTheme"
+            android:name=".activity.SearchActivity"/>
     </application>
 </manifest>
